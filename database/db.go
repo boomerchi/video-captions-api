@@ -6,5 +6,5 @@ type DB interface {
 	UpdateJob(string, *Job) error
 	GetJob(string) (*Job, error)
 	DeleteJob(string) error
-	GetJobs(string) ([]Job, error)
+	GetJobs(string) ([]*Job, error)
 }

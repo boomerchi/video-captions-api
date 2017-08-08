@@ -18,11 +18,32 @@ type Client struct {
 }
 
 // GetJobs gets all jobs associated with a ParentID
-func (c Client) GetJobs(parentID string) ([]database.Job, error) {
+func (c Client) GetJobs(parentID string) ([]*database.Job, error) {
 	jobs, err := c.DB.GetJobs(parentID)
 	if err != nil {
 		c.Logger.Error("Error loading jobs from DB", parentID)
 		return nil, err
+	}
+	providerToIDs := make(map[string][]string)
+	idToIndex := make(map[string]int)
+	for i, job := range jobs {
+		if !job.Done {
+			providerID := job.ProviderParams["ProviderID"]
+			providerToIDs[job.Provider] = append(providerToIDs[job.Provider], providerID)
+			idToIndex[providerID] = i
+		}
+	}
+
+	for provider, ids := range providerToIDs {
+		providerClient := c.Providers[provider]
+		updatedJobs, _ := providerClient.GetJobs(ids)
+		for _, updatedJob := range updatedJobs {
+			index := idToIndex[updatedJob.ID]
+			job := jobs[index]
+			if job.UpdateStatus(updatedJob.Status) {
+				c.DB.UpdateJob(job.ID, job)
+			}
+		}
 	}
 	sort.Sort(database.ByCreatedAt(jobs))
 	return jobs, nil

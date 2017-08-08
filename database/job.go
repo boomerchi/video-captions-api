@@ -31,7 +31,7 @@ type JobOutput struct {
 type ProviderParams map[string]string
 
 // ByCreatedAt implements sort.Interface for []Job by CreatedAt field.
-type ByCreatedAt []Job
+type ByCreatedAt []*Job
 
 func (b ByCreatedAt) Len() int { return len(b) }
 

@@ -51,7 +51,32 @@ func (c *ThreePlayProvider) Download(id string, captionsType string) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
-  return c.GetCaptions(uint(i), threeplay.CaptionsFormat(captionsType))
+	return c.GetCaptions(uint(i), threeplay.CaptionsFormat(captionsType))
+}
+
+// GetJobs returns multiple 3play files
+func (c *ThreePlayProvider) GetJobs(ids []string) ([]*database.Job, error) {
+	fileIDs := url.Values{}
+	for _, id := range ids {
+		fileIDs.Set("file_id", id)
+	}
+
+	filesPage, err := c.GetFiles(nil, fileIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]*database.Job, len(filesPage.Files))
+
+	for i, file := range filesPage.Files {
+		jobs[i] = &database.Job{
+			ID:       strconv.FormatUint(uint64(file.ID), 10),
+			Status:   file.State,
+			Provider: providerName,
+		}
+	}
+
+	return jobs, nil
 }
 
 // GetJob returns a 3play file
